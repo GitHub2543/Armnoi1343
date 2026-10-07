@@ -1,0 +1,35 @@
+const address = "0x71c7656ec7ab88b098defb751b7401b5f6d8976f";
+const apiKey = process.env.ETHERSCAN_API_KEY;
+
+async function getEthBalance(address, apiKey) {
+  const url = new URL("https://api.etherscan.io/v2/api");
+  url.search = new URLSearchParams({
+    chainid: "1",
+    module: "account",
+    action: "balance",
+    address,
+    tag: "latest",
+    apikey: apiKey,
+  }).toString();
+
+  const response = await fetch(url);
+  const data = await response.json();
+
+  if (data.status !== "1") {
+    throw new Error(data.message || data.result || "Etherscan API error");
+  }
+
+  const wei = BigInt(data.result);
+  return formatEther(wei);
+}
+
+function formatEther(wei) {
+  const factor = 10n ** 18n;
+  const whole = wei / factor;
+  const fraction = (wei % factor).toString().padStart(18, "0");
+
+  return `${whole.toString()}.${fraction}`.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
+}
+
+const eth = await getEthBalance(address, apiKey);
+console.log("ETH balance:", eth);
